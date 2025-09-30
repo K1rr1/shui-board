@@ -1,0 +1,65 @@
+service: shui-board
+frameworkVersion: "3"
+
+plugins:
+  - serverless-plugin-typescript
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: eu-north-1
+  environment:
+    TABLE_NAME: shui-messages
+
+  # ✅ Ge Lambda rättigheter till DynamoDB
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+      Resource:
+        - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/shui-messages
+
+functions:
+  createMessage:
+    handler: src/handlers/createMessage.handler
+    events:
+      - httpApi:
+          path: /messages
+          method: POST
+
+resources:
+  Resources:
+    MessagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: shui-messages
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: username
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+          - AttributeName: gsiAllPK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: GSI_ByUser
+            KeySchema:
+              - AttributeName: username
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: GSI_All
+            KeySchema:
+              - AttributeName: gsiAllPK
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL

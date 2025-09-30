@@ -1,0 +1,22 @@
+{
+  "name": "shui-board",
+  "version": "1.0.0",
+  "description": "Anslagstavla - Individuell examination",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "sls deploy",
+    "dev": "sls offline"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.637.0",
+    "@aws-sdk/lib-dynamodb": "^3.637.0"
+  },
+  "devDependencies": {
+    "serverless": "^3.39.0",
+    "serverless-plugin-typescript": "^2.1.5",
+    "typescript": "^5.6.3",
+    "@types/node": "^20.12.12"
+  }
+}
