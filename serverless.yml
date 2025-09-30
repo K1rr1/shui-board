@@ -10,14 +10,17 @@ provider:
   region: eu-north-1
   environment:
     TABLE_NAME: shui-messages
-
-  # ✅ Ge Lambda rättigheter till DynamoDB
   iamRoleStatements:
     - Effect: Allow
       Action:
         - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:Query
       Resource:
         - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/shui-messages
+        - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/shui-messages/index/GSI_ByUser
+        - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/shui-messages/index/GSI_All
 
 functions:
   createMessage:
@@ -26,6 +29,20 @@ functions:
       - httpApi:
           path: /messages
           method: POST
+
+  getMessages:
+    handler: src/handlers/getMessages.handler
+    events:
+      - httpApi:
+          path: /messages
+          method: GET
+
+  updateMessage:
+    handler: src/handlers/updateMessage.handler
+    events:
+      - httpApi:
+          path: /messages/{id}
+          method: PATCH
 
 resources:
   Resources:
