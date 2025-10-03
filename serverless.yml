@@ -10,6 +10,23 @@ provider:
   region: eu-north-1
   environment:
     TABLE_NAME: shui-messages
+
+  # CORS (gäller preflight + svar för alla routes)
+  httpApi:
+    cors:
+      allowedOrigins:
+        - 'http://localhost:5173'
+        # lägg till din S3/CloudFront-origin vid prod
+      allowedMethods:
+        - GET
+        - POST
+        - PATCH
+        - OPTIONS
+      allowedHeaders:
+        - Content-Type
+      allowCredentials: false
+      maxAge: 600
+
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -19,8 +36,8 @@ provider:
         - dynamodb:Query
       Resource:
         - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/shui-messages
-        - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/shui-messages/index/GSI_ByUser
         - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/shui-messages/index/GSI_All
+        - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/shui-messages/index/GSI_ByUser
 
 functions:
   createMessage:
@@ -54,29 +71,33 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
-          - AttributeName: username
+          - AttributeName: gsiAllPK
             AttributeType: S
           - AttributeName: createdAt
             AttributeType: S
-          - AttributeName: gsiAllPK
+          - AttributeName: username
             AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: GSI_ByUser
-            KeySchema:
-              - AttributeName: username
-                KeyType: HASH
-              - AttributeName: createdAt
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
           - IndexName: GSI_All
             KeySchema:
               - AttributeName: gsiAllPK
                 KeyType: HASH
               - AttributeName: createdAt
                 KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
+            Projection: { ProjectionType: ALL }
+          - IndexName: GSI_ByUser
+            KeySchema:
+              - AttributeName: username
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection: { ProjectionType: ALL }
+
+  Outputs:
+    HttpApiUrl:
+      Value: https://${HttpApi}.execute-api.${aws:region}.amazonaws.com
+      Export:
+        Name: HttpApiUrl
